@@ -44,9 +44,6 @@ func main() {
 		return
 	}
 
-	println("sending antidos")
-	robot.AntiDOS()
-
 	println("set led")
 	err = robot.SetLEDColor(color.RGBA{R: 255, G: 0, B: 0})
 	if err != nil {
@@ -55,7 +52,7 @@ func main() {
 
 	time.Sleep(3 * time.Second)
 
-	robot.Stop()
+	robot.Sleep()
 }
 
 func scanHandler(a *bluetooth.Adapter, d bluetooth.ScanResult) {

@@ -3,6 +3,7 @@ package sphero
 import (
 	"errors"
 	"image/color"
+	"time"
 
 	"tinygo.org/x/bluetooth"
 )
@@ -79,6 +80,11 @@ func (r *Robot) Start() (err error) {
 
 	r.antiDOSCharacteristic = &chars[0]
 
+	r.AntiDOS()
+	r.Wake()
+
+	time.Sleep(100 * time.Millisecond)
+
 	return
 }
 
@@ -92,13 +98,16 @@ func (r *Robot) AntiDOS() error {
 	return err
 }
 
-func (r *Robot) Stop() (err error) {
-	return
-}
-
 // Wake brings the device out of sleep mode
 func (r *Robot) Wake() error {
 	_, err := r.send(r.apiCharacteristic, DevicePowerInfo, PowerCommandsWake, true, []byte{})
+
+	return err
+}
+
+// Sleep puts the device into sleep mode to save battery
+func (r *Robot) Sleep() error {
+	_, err := r.send(r.apiCharacteristic, DevicePowerInfo, PowerCommandsSleep, true, []byte{})
 
 	return err
 }
@@ -122,6 +131,11 @@ func (r *Robot) Roll(heading, speed int) error {
 
 	_, err := r.send(r.apiCharacteristic, DeviceDriving, DrivingCommandsWithHeading, true, payload)
 	return err
+}
+
+// Stop moving
+func (r *Robot) Stop() (err error) {
+	return r.Roll(0, 0)
 }
 
 // https://github.com/MProx/Sphero_mini/blob/1dea6ff7f59260ea5ecee9cb9a7c9f46f1f8a6d9/sphero_mini.py#L243
