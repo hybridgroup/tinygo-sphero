@@ -44,7 +44,7 @@ func main() {
 		return
 	}
 
-	println("set led")
+	println("set led red")
 	err = robot.SetLEDColor(color.RGBA{R: 255, G: 0, B: 0})
 	if err != nil {
 		println(err)
@@ -52,6 +52,7 @@ func main() {
 
 	time.Sleep(3 * time.Second)
 
+	println("going to sleep")
 	robot.Sleep()
 }
 

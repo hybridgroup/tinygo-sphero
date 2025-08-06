@@ -20,7 +20,6 @@ type Robot struct {
 	buf                     []byte
 	sequenceNo              int
 	expectedCommandSequence int
-	outBuffer               []byte
 }
 
 var (
@@ -82,8 +81,6 @@ func (r *Robot) Start() (err error) {
 
 	r.AntiDOS()
 	r.Wake()
-
-	time.Sleep(100 * time.Millisecond)
 
 	return
 }
@@ -175,6 +172,8 @@ func (r *Robot) send(dc *bluetooth.DeviceCharacteristic, deviceID, commandID byt
 		return nil, nil
 	}
 
-	// TODO: wait for response?
+	// TODO: wait for real response?
+	time.Sleep(100 * time.Millisecond)
+
 	return nil, nil
 }

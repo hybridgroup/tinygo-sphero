@@ -55,11 +55,10 @@ func main() {
 	// roll
 	for i := 0; i < 4; i++ {
 		robot.Roll(i*90, 150)
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 	robot.Stop()
-
 	robot.SetLEDColor(color.RGBA{R: 0, G: 0, B: 255})
 	time.Sleep(3 * time.Second)
 
