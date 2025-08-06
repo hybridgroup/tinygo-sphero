@@ -1,4 +1,6 @@
-# tinygo-spheromini
+# tinygo-sphero
+
+![Sphero Mini](./images/sphero-mini.png)
 
 TinyGo Bluetooth driver for the Sphero Mini robot.
 
