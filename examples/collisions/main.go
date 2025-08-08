@@ -2,6 +2,7 @@ package main
 
 import (
 	"image/color"
+	"strconv"
 	"time"
 
 	sphero "github.com/hybridgroup/tinygo-sphero"
@@ -64,6 +65,10 @@ func main() {
 			}
 
 			println("collision", direction, "yMag", yMag, "xMag", xMag)
+		case msg.DeviceID == sphero.DevicePowerInfo && msg.Command == sphero.PowerCommandsBatteryVoltage:
+			data := msg.Payload
+			voltage := float32(int32(data[2]) + int32(data[1])*256 + int32(data[0])*65536)
+			println("battery:", strconv.FormatFloat(float64(voltage)/100, 'f', 2, 64), "V")
 		default:
 			if debug {
 				println("data:", msg.String())
@@ -78,6 +83,8 @@ func main() {
 		Xs:     20,
 		Ys:     20,
 		Dead:   10})
+
+	robot.GetBatteryVoltage()
 
 	println("set led red")
 	err = robot.SetLEDColor(color.RGBA{R: 255, G: 0, B: 0})

@@ -197,6 +197,13 @@ func (r *Robot) ConfigureCollisionDetection(cc CollisionConfig) error {
 	return err
 }
 
+// GetBatteryVoltage requests a battery voltage notification.
+func (r *Robot) GetBatteryVoltage() error {
+	_, err := r.send(r.apiCharacteristic, DevicePowerInfo, PowerCommandsBatteryVoltage, true, []byte{})
+
+	return err
+}
+
 // https://github.com/MProx/Sphero_mini/blob/1dea6ff7f59260ea5ecee9cb9a7c9f46f1f8a6d9/sphero_mini.py#L243
 func (r *Robot) send(dc *bluetooth.DeviceCharacteristic, deviceID, commandID byte, expectResponse bool, message []byte) (*Payload, error) {
 	// sequence ensures we can associate a request with a response
