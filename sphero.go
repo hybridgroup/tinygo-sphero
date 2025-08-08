@@ -16,7 +16,6 @@ type Robot struct {
 	spheroService         *bluetooth.DeviceService
 	antiDOSCharacteristic *bluetooth.DeviceCharacteristic
 
-	commandResponse         chan *payload
 	buf                     []byte
 	sequenceNo              int
 	expectedCommandSequence int
@@ -35,9 +34,8 @@ var (
 // NewRobot creates a new Sphero Mini robot.
 func NewRobot(dev *bluetooth.Device) *Robot {
 	r := &Robot{
-		device:          dev,
-		commandResponse: make(chan *payload),
-		buf:             make([]byte, 255),
+		device: dev,
+		buf:    make([]byte, 0, 255),
 	}
 
 	return r
@@ -135,8 +133,72 @@ func (r *Robot) Stop() (err error) {
 	return r.Roll(0, 0)
 }
 
+// Enable API notifications
+func (r *Robot) EnableNotifications(f func(message *Payload)) error {
+	return r.apiCharacteristic.EnableNotifications(func(data []byte) {
+		r.buf = append(r.buf, data...)
+
+		for {
+			// Find start marker
+			startIdx := -1
+			for i, b := range r.buf {
+				if b == DataPacketStart {
+					startIdx = i
+					break
+				}
+			}
+			if startIdx == -1 {
+				// No start marker, clear buffer
+				r.buf = nil
+				break
+			}
+
+			// Find end marker after start
+			endIdx := -1
+			for i := startIdx; i < len(r.buf); i++ {
+				if r.buf[i] == DataPacketEnd {
+					endIdx = i
+					break
+				}
+			}
+			if endIdx == -1 {
+				// No end marker yet, wait for more data
+				if startIdx > 0 {
+					// Remove data before start marker
+					r.buf = r.buf[startIdx:]
+				}
+				break
+			}
+
+			// Extract packet
+			packet := r.buf[startIdx : endIdx+1]
+			r.buf = r.buf[endIdx+1:]
+
+			// Decode and handle
+			p := &Payload{}
+			err := p.Decode(packet)
+			if err != nil {
+				if debug {
+					println("notification error:", err.Error())
+				}
+				continue
+			}
+
+			f(p)
+		}
+	})
+}
+
+// ConfigureCollisionDetection configures collision detection events.
+func (r *Robot) ConfigureCollisionDetection(cc CollisionConfig) error {
+	payload := []byte{cc.Method, cc.Xt, cc.Xs, cc.Yt, cc.Ys, cc.Dead}
+
+	_, err := r.send(r.apiCharacteristic, DeviceSensor, SensorCommandConfigureCollision, true, payload)
+	return err
+}
+
 // https://github.com/MProx/Sphero_mini/blob/1dea6ff7f59260ea5ecee9cb9a7c9f46f1f8a6d9/sphero_mini.py#L243
-func (r *Robot) send(dc *bluetooth.DeviceCharacteristic, deviceID, commandID byte, expectResponse bool, message []byte) (*payload, error) {
+func (r *Robot) send(dc *bluetooth.DeviceCharacteristic, deviceID, commandID byte, expectResponse bool, message []byte) (*Payload, error) {
 	// sequence ensures we can associate a request with a response
 	r.sequenceNo += 1
 	if r.sequenceNo > 255 {
@@ -149,7 +211,7 @@ func (r *Robot) send(dc *bluetooth.DeviceCharacteristic, deviceID, commandID byt
 	}
 
 	// define the header for the send request
-	p := payload{
+	p := Payload{
 		Flags:    FlagResetsInactivityTimeout + FlagRequestsResponse, // set the flags
 		DeviceID: deviceID,                                           // send is for the given device id
 		Command:  commandID,                                          // with the command
@@ -157,7 +219,7 @@ func (r *Robot) send(dc *bluetooth.DeviceCharacteristic, deviceID, commandID byt
 		Payload:  message,
 	}
 
-	data := p.encode()
+	data := p.Encode()
 
 	if debug {
 		println("sending data", "bytes", data)

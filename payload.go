@@ -1,8 +1,11 @@
 package sphero
 
-import "fmt"
+import (
+	"encoding/hex"
+	"fmt"
+)
 
-type payload struct {
+type Payload struct {
 	Flags    uint8
 	DeviceID uint8
 	Command  uint8
@@ -11,54 +14,55 @@ type payload struct {
 	Payload  []byte
 }
 
-func (p *payload) encode() []byte {
+func (p *Payload) Encode() []byte {
 	sendBytes := []byte{
-		DataPacketStart, // first byte is always 0x08
+		DataPacketStart, // first byte is always 0x8d
 		p.Flags,         // set the flags
 		p.DeviceID,      // send is for the given device id
 		p.Command,       // with the command
 		p.Sequence,      // set the sequence id to ensure that packets are orderable
 	}
 
-	// add the payload
 	sendBytes = append(sendBytes, p.Payload...)
-
-	// calculateChecksum
-	cs := calculateChecksum(sendBytes)
-
+	cs := calculateChecksum(sendBytes[1:])
 	sendBytes = append(sendBytes, cs, DataPacketEnd)
 
 	return sendBytes
 }
 
-func (p *payload) decode(d []byte) error {
+// Decode expects the entire packet, include start, header, payload, checksum, and end bytes.
+func (p *Payload) Decode(d []byte) error {
 	p.Flags = d[1]
 	p.DeviceID = d[2]
 	p.Command = d[3]
 	p.Sequence = d[4]
-	p.Error = d[5]
-
-	checksum := d[6]
-
-	// compare checksum
-	cc := calculateChecksum(d[1 : len(d)-1])
+	checksum := d[len(d)-2]
+	cc := calculateChecksum(d[1 : len(d)-2])
 
 	if checksum != cc {
-		return fmt.Errorf("checksum invalid")
+		return fmt.Errorf("decode checksum for %s invalid: expected %x, received: %x", hex.EncodeToString(d), cc, checksum)
 	}
 
 	if len(d) > 7 {
-		p.Payload = d[7 : len(d)-2]
+		p.Payload = d[5 : len(d)-2]
 	}
 
 	return nil
 }
 
-func calculateChecksum(b []byte) uint8 {
-	checksum := uint16(0)
-	for _, b := range b[1:] {
-		checksum = checksum + uint16(b)
-	}
+func (p *Payload) String() string {
+	return fmt.Sprintf("Flags: %d, DeviceID: %d, Command: %d, Sequence: %d, Payload: %s",
+		p.Flags,
+		p.DeviceID,
+		p.Command,
+		p.Sequence,
+		hex.EncodeToString(p.Payload))
+}
 
-	return uint8(^(checksum % 256))
+func calculateChecksum(b []byte) uint8 {
+	var calculatedChecksum uint16
+	for i := range b {
+		calculatedChecksum += uint16(b[i])
+	}
+	return uint8(^(calculatedChecksum % 256))
 }
