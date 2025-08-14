@@ -94,3 +94,34 @@ go run ./tutorial/step4/ [MAC address or Bluetooth ID]
 tinygo flash -target badger2040-w -ldflags="-X main.DeviceAddress=[MAC address]" ./tutorial/step4/
 ```
 
+### step5
+
+We can also receive data notifications from the Sphero Mini such as the battery voltage. This program runs for 15 seconds and displays the current battery charge.
+
+#### Running on your computer
+
+```shell
+go run ./tutorial/step5/ [MAC address or Bluetooth ID]
+```
+
+#### Running on your microcontroller
+
+```shell
+tinygo flash -target badger2040-w -ldflags="-X main.DeviceAddress=[MAC address]" ./tutorial/step5/
+```
+
+### step6
+
+There are some interesting data notifications from the Sphero Mini such as collision detection. Pick up the Sphero Mini and shake it around!
+
+#### Running on your computer
+
+```shell
+go run ./tutorial/step6/ [MAC address or Bluetooth ID]
+```
+
+#### Running on your microcontroller
+
+```shell
+tinygo flash -target badger2040-w -ldflags="-X main.DeviceAddress=[MAC address]" ./tutorial/step6/
+```
