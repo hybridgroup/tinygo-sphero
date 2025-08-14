@@ -16,3 +16,7 @@ device: F8:25:80:33:67:2D -49 SM-672D
 connected to  F8:25:80:33:67:2D
 set led
 ```
+
+## Tutorial
+
+[Check out the step by step tutorial](./tutorial/)
